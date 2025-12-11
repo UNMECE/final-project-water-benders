@@ -1,48 +1,50 @@
 #include "acequia_manager.h"
 #include <iostream>
-#include <cmath> 
+#include <cmath>
+#include <vector>
+
 
 /*Instructions for this problem:
 
-	The intend of this project is to simulate water management conservation principles in the context of New Mexico
+      The intend of this project is to simulate water management conservation principles in the context of New Mexico
 
-	In this simulation, there exists several Regions (North, South, etc.). Each region class includes both:
-	- a given water level
-	- a given water need
-	- a indicator boolean for if the region is flooded
-	- an indicator boolean for if the region is in drought
+      In this simulation, there exists several Regions (North, South, etc.). Each region class includes both:
+      - a given water level
+      - a given water need
+      - a indicator boolean for if the region is flooded
+      - an indicator boolean for if the region is in drought
 
-	With each region, there are given waterSources provided (perhaps a .dat file list each waterSource to  a region) 
-	and certain waterSources have canals connected to them to deliver water across regions.
+      With each region, there are given waterSources provided (perhaps a .dat file list each waterSource to  a region)
+      and certain waterSources have canals connected to them to deliver water across regions.
 
-	Given the current state of the region, students wil be asked to utlize the canals that connect regions to
-	develop the logic and algorithm for finding a solution. The simulation has a fixed time
+      Given the current state of the region, students wil be asked to utlize the canals that connect regions to
+      develop the logic and algorithm for finding a solution. The simulation has a fixed time
 
 
 
-	The student solution will be evaluated on the criteria that each region meets the following:
-	- a given region is NOT flooded
-	- a given region is NOT in drought
-	- the region waterNeed does not exceed the region waterLevel 
+      The student solution will be evaluated on the criteria that each region meets the following:
+      - a given region is NOT flooded
+      - a given region is NOT in drought
+      - the region waterNeed does not exceed the region waterLevel
 */
 
 /*This will be how the solveProblems function is set up. The student may enter their on  */
 /*
 void solveProblems(AcequiaManager& manager)
 {
-	//the student can call the members of the canals object such as name of canal. sourceRegion, and destinationRegion
-	//This could be helpful in informing the students strategy to solve the problem
-	auto canals = manager.getCanals();
-	//students may call to get Region and WaterSource objects to inform decisions 
+      //the student can call the members of the canals object such as name of canal. sourceRegion, and destinationRegion
+      //This could be helpful in informing the students strategy to solve the problem
+      auto canals = manager.getCanals();
+      //students may call to get Region and WaterSource objects to inform decisions
 
 
-	while(!manager.isSolved && manager.hour!=manager.SimulationMax)
-	{	
-		//enter student code here
+      while(!manager.isSolved && manager.hour!=manager.SimulationMax)
+      {     
+            //enter student code here
 
 
-		manager.nexthour();
-	}
+            manager.nexthour();
+      }
 }
 */
 
@@ -51,440 +53,204 @@ void solveProblems(AcequiaManager& manager)
 
 /*void solveProblems(AcequiaManager& manager)
 {
-	auto canals = manager.getCanals();
-	while(!manager.isSolved && manager.hour!=manager.SimulationMax)
-	{
-	//Students will implement this function to solve the probelms
-	//Example: Adjust canal flow rates and directions
+      auto canals = manager.getCanals();
+      while(!manager.isSolved && manager.hour!=manager.SimulationMax)
+      {
+      //Students will implement this function to solve the probelms
+      //Example: Adjust canal flow rates and directions
 
-	//First of all, this is a fixed scenario. 
-		if(manager.hour==0)
-		{
-			canals[0]->setFlowRate(1);
-			canals[0]->toggleOpen(true);
-		}
-		else if(manager.hour==1)
-		{
-			canals[1]->setFlowRate(0.5);
-			canals[1]->toggleOpen(true);
-		}
-		else if(manager.hour==82)
-		{
-			canals[0]->toggleOpen(false);
-			canals[1]->toggleOpen(false);
-		}
+      //First of all, this is a fixed scenario.
+            if(manager.hour==0)
+            {
+                  canals[0]->setFlowRate(1);
+                  canals[0]->toggleOpen(true);
+            }
+            else if(manager.hour==1)
+            {
+                  canals[1]->setFlowRate(0.5);
+                  canals[1]->toggleOpen(true);
+            }
+            else if(manager.hour==82)
+            {
+                  canals[0]->toggleOpen(false);
+                  canals[1]->toggleOpen(false);
+            }
 
-		//only add solution here!!!
+            //only add solution here!!!
 
 
-	//student may add any necessary functions or check on the progress of each region as the simulation moves forward. 
-	//The manager takes care of updating the waterLevels of each region and waterSource while the student is just expected
-	//to solve how to address the state of each region
+      //student may add any necessary functions or check on the progress of each region as the simulation moves forward.
+      //The manager takes care of updating the waterLevels of each region and waterSource while the student is just expected
+      //to solve how to address the state of each region
 
-		
-		manager.nexthour();
-	}
+            
+            manager.nexthour();
+      }
 */
 
 /*
 void solveProblems(AcequiaManager& manager)
 {
-	//Accessing canals and regions 
+      //Accessing canals and regions
     auto canals = manager.getCanals();
     auto regions = manager.getRegions();
-    
-	//Use canals to move the water 
+   
+      //Use canals to move the water
     while(!manager.isSolved && manager.hour != manager.SimulationMax)
     {
-		
-		
-		manager.nexthour();
-	}
+            
+            
+            manager.nexthour();
+      }
 
-	// Phase 3: Lock solution to prevent further changes
-	for(auto canal : canals)
-		canal->toggleOpen(false);
+      // Phase 3: Lock solution to prevent further changes
+      for(auto canal : canals)
+            canal->toggleOpen(false);
 }
 */
 
-
-//function for determining flowrate. There is 36000 s in an hour. amount_to_move is in acre-feet.
-//if flow rate is 1, we are trasferring 1 * 3600 / 1000 = 3.6 acre-feet per hour (the maximum)
-double CalculateFlowRate(Region* source, Region* destination)
+double gain(Region *r)
 {
-	if (destination->waterNeed <= 0.0) {
-		return 0.0;
-	}
-
-	double flowrate;
-
-	// Calculate how much water destination needs (acre-feet)
-    double difference = destination->waterNeed - destination->waterLevel;
-    
-    // Flow should be proportional to deficit severity
-    // If deficit is 50 acre-feet and we can transfer 3.6 acre-feet/hour max:
-    // ratio = 50 / 50 = 1.0 → use full capacity
-    
-    double ratio = (difference / destination->waterNeed);  // 0.0 to 1.0+
-    double flow_gal_per_sec = ratio * 100.0;
-    // Convert to flowRate (0.0 to 1.0 scale)
-    double flowRate = (flow_gal_per_sec * 3600) / 325851.0;
-    
-    // Cap at maximum flow rate.
-    if(flowRate > 1.0) flowRate = 1.0;
-    
-    return flowRate;
-
+      double gain = 0.0;
+      double difference = r->waterLevel - r->waterNeed;
+      return (difference > 0.0) ? difference: 0.0;
 }
 
-void solveProblems(AcequiaManager& manager)
+double deficit(Region *r)
 {
-	const auto& canals = manager.getCanals();
-	const auto& regions = manager.getRegions();
-
-	if (regions.size() < 3 || canals.size() < 4) {
-		return ;
-	}
-
-	auto North = regions[0];
-	auto NorthCurrent = regions[0]->waterLevel;
-	auto NorthNeed = regions[0]->waterNeed;
-
-	auto South = regions[1];
-	auto SouthCurrent = regions[1]->waterLevel;
-	auto SouthNeed = regions[1]->waterNeed;
-
-	auto East = regions[2];
-	auto EastCurrent = regions[2]->waterLevel;
-	auto EastNeed = regions[2]->waterNeed;
-
-	while(!manager.isSolved && manager.hour != manager.SimulationMax)
-	{
-		//North region is the key component for this system: it has canals connecting water to both South and East.
-		//Need to make sure North has enough water to distribute. 
-		//East to North => logic for canal D. The only canal that can move water to North.
-		if(NorthCurrent < NorthNeed && EastCurrent > EastNeed)
-		{
-			auto rate = CalculateFlowRate(East, North);
-			canal[3]->setFlowRate(rate);
-			canal[3]->toggleOpen(true);
-
-		}else if(EastCurrent >= EastNeed) 
-		{
-			canal[3]->toggleOpen(false);//close canal once East reaches its water need
-		}
-
-		//Next, we can start transferring water to bot     //Next, we can start transferring water to both South and East depending on North's healthy amount of water.
-                if(NorthCurrent > NorthNeed &&  NorthCurrent < North->waterCapacity)
-                {
-                        //North to South => logic for canal A
-                        if(SouthCurrent < SouthNeed)
-                        {
-                                auto rate = CalculateFlowRate(North, South);
-                                canal[0]->setFlowRate(rate);
-                                canal[0]->toggleOpen(true);
-                        }
-
-                        //North to East => logic for canal C
-                        if(EastCurrent < EastNeed)
-                        {
-                                auto rate = CalculateFlowRate(North, East);
-                                canal[3]->setFlowRate(rate);
-                                canal[3]->toggleOpen(true);
-
-                        }
-                }else if(NorthCurrent == NorthNeed)
-                {
-                        //Once North reaches its water needed, stop canal A and C
-                        canal[3]->toggleOpen(false);
-                        canal[0]->toggleOpen(false);
-                }
-
-
-                //South to East => logic for canal B
-                if(EastCurrent > EastNeed && SouthCurrent < SouthNeed)
-                {
-                        auto rate = CalculateFlowRate(South, East);
-                        canal[1]->setFlowRate(rate);
-                        canal[1]->toggleOpen(true);
-                } else if(SouthCurrent == SouthNeed )
-                {
-                        canal[1]->toggleOpen(false);
-                }
-
-                if(EastCurrent <= EastNeed)
-                {
-                        canal[3]->toggleOpen(false);
-                }
-
-
-
-                manager.nexthour();
-        }
-
-}
-South and East depending on North's healthy amount of water. 
-		if(NorthCurrent > NorthNeed &&  NorthCurrent < North->waterCapacity) 
-		{
-			//North to South => logic for canal A
-			if(SouthCurrent < SouthNeed)
-			{
-				auto rate = CalculateFlowRate(North, South);
-				canal[0]->setFlowRate(rate);
-				canal[0]->toggleOpen(true);
-			}
-
-			//North to East => logic for canal C
-			if(EastCurrent < EastNeed)
-			{
-				auto rate = CalculateFlowRate(North, East);
-				canal[3]->setFlowRate(rate);
-				canal[3]->toggleOpen(true);
-
-			}
-		} else if (NorthCurrent == NorthNeed)
-		{
-			//Once North reaches its water needed, stop canal A and C 
-			canal[3]->toggleOpen(false);
-			canal[0]->toggleOpen(false);
-		
-				
-
-		//South to East => logic for canal B 
-		if(EastCurrent > EastNeed && SouthCurrent < SouthNeed)
-		{
-			auto rate = CalculateFlowRate(South, East);
-			canal[1]->setFlowRate(rate);
-			canal[1]->toggleOpen(true);
-		
-		} else if (SouthCurrent == SouthNeed )
-		{
-			canal[1]->toggleOpen(false);
-		}
-
-		if (EastCurrent <= EastNeed) {
-		
-			canal[3]->toggleOpen(false);
-		}
-
-		
-
-		manager.nexthour();
-
+      double deficit = 0.0;
+      double difference = r->waterNeed - r->waterLevel;
+      return (difference > 0.0) ? difference:0.0;
 }
 
-
-//In this solution, students can make functions that aid in identifying the best course of action for moving
-//water resources. They can set conditions that then work on the canal vectors based on the information reported
-
-//This can help in optimizing solutions for dynamic constraints such as weather (rain, or dried up waterSources) and
-//make the solution to the problem more abstract, allowing the logic and algorithm to be the sole priority of the student
-//while the computation is left for the Acequia Manager
-
-//This would be the perfect opportunity to identify the tools learned from ECE 231L such as:
-//data structures (stacks, queues, trees(?)), templates, vector class functions, etc... to aid in the algorithm solution
-
-
-/*
-int findCanal(std::vector<Canal *> canals, std::string region)
+//THOUSANDS of gallons of water are being moved around. Therefore, we need to develop an algorithm that will convert the water difference to corresponding flow rate.
+double DetermineFlowRate(double RegionDeficit, double RegionGain)
 {
-	int match;
-	for(int i = 0; i < canals.size(); i++)
-	{
-		if(canals[i]->sourceRegion->name == region)
-		{
-			match = i;
-		}
-	}
-	return match;
-}
+      if(RegionDeficit <= 0.0 || RegionGain <= 0.0) return 0.0;
 
-void release(std::vector<Canal *> canals, std::string region)
-{
-	int match = findCanal(canals, region);
-	canals[match]->toggleOpen(true);
-	canals[match]->setFlowRate(1);
-}
-
-void close(std::vector<Canal *> canals, std::string region)
-{
-	int match = findCanal(canals, region);
-	canals[match]->toggleOpen(false);
+      double amountToMove = std::min(RegionDeficit, RegionGain);
+      double rate = amountToMove / 3.6;
+      if(rate > 1.0) rate = 1.0; // Capping rate
+      if(rate < 0.8) rate = 0.5; // Moderate flow
+      if(rate < 0.5) rate = 0.01; //smallest flow
+      return rate;
 }
 
 
 void solveProblems(AcequiaManager& manager)
-{
+{     
+      auto canals = manager.getCanals();
+      auto region = manager.getRegions();
 
-	bool check = false;
-	auto canals = manager.getCanals();
-	auto regions = manager.getRegions();
+      //Assigning regions
+      auto North = region[0];
+      auto NorthNeed = region[0]->waterNeed;
 
-	while(!manager.isSolved && manager.hour!=manager.SimulationMax)
-	{
-		
-		if(manager.hour == 0)
-		{
-			for(int i = 0; i < canals.size(); i++)
-			{
-				canals[i]->toggleOpen(true);
-				canals[i]->setFlowRate(1);
-			}
-		}
+      auto South = region[1];
+      auto SouthNeed = region[1]->waterNeed;
 
-		for(int i = 0; i < regions.size(); i++)
-		{
-			if(regions[i]->isFlooded == true)
-			{
-				//release water from that region by a canal
-				release(canals, regions[i]->name);
-			}
-			else if(regions[i]->isInDrought = true)
-			{
-				//find canal to move water
-				close;
-			}
+      auto East = region[2];
+      auto EastNeed = region[2]->waterNeed;
 
-			else if(regions[i]->isFlooded == true && regions[i]->isInDrought == true)
-			{
-				close(canals, regions[i]->name);
-			}
-		}
-		
-		manager.nexthour();
-	}
-}
-
-*/
-
-int findCanal(const std::vector<Canal*>& canals, const std::string& region)
-{
-    	int match = -i;
-	for(int i = 0; i < canals.size(); i++)
-	{
-		if(canals[i] != nullptr && canals[i]->sourceRegion != nullptr && canals[i]->sourceRegion->name == region);
-		{
-
-	match = i;
-		}
-	}
-	return match;
-}
-
-void release(std::vector<Canal *> canals, std::string region)
-{
-        int match = findCanal(canals, region);
-        if (match != -1 && canals[match_index] != nullptr)
-        {
-        std::cout << "Action: Releasing water from region " << region << std::endl;
-        canals[match_index]->toggleOpen(true);
-
-        canals[match_index]->setFlowRate(2);
-	} else {
-        std::cerr << "Warning: Could not find canal for region " << region << " to release water." << std::endl;
-    }
-}
+      //Assigning canal names based on initialization information from AcequiaManager.cpp
+      auto canalA = canals[0]; //Connecting North -> South
+      auto canalB = canals[1]; //Connecting South -> East
+      auto canalC = canals[2]; //Connecting North -> East
+      auto canalD = canals[3]; //Connecting East -> North
 
 
-void manageCanalFlow(std::vector<Canal*>& canals, std::string region, bool isOpen, double flowRate) {
-    int matchIndex = findCanalIndex(canals, region);
-    
-    if (matchIndex != -1)  {
-        Canal* targetCanal = canals[matchIndex];
-	
-	if (targetCanal != nullptr) {
+      while(!manager.isSolved && manager.hour != manager.SimulationMax)
+      {
+            // Opening canals before each iteration
+            for(auto canal : canals)
+            {
+                  canal->toggleOpen(true);
+            }
 
-        targetCanal->toggleOpen(isOpen);
-        targetCanal->setFlowRate(flowRate);
-	}
-    } else {
-        std::cerr << "Error: Canal for region " << region << " not found." << std::endl;
-    }
-}
+            // Updating current water level through each iteration
+            auto NorthCurrent = North->waterLevel;
+            auto SouthCurrent = South->waterLevel;
+            auto EastCurrent = East->waterLevel;
 
-void close(std::vector<Canal *> canals, std::string region)
-{
-	int match_index = findCanalIndex(canals, region);
-	
-	if (match_index >= 0 && match_index < canals.size() && canals[match_index] != nullptr) {
+            auto NorthGain = gain(North);
+            auto SouthGain = gain(South);
+            auto EastGain = gain(East);
 
-	canals[match_index]->toggleOpen(false);
-	} else {
-		std::cerr << "Warning: could not for canal for region " << region << " to close water flow." << std::endl;
-	}
-}
+            auto NorthDeficit = deficit(North);
+            auto SouthDeficit = deficit(South);
+            auto EastDeficit = deficit(East);
 
-int calculateTotalFlow(const std::vector<Canal*>& canals{
+            /*
+                  defecit[0] = North
+                  defecit[1] = South
+                  defecit[2] = East
+            */
+            // WHAT ACEQUIAMANAGER PROVIDES US:
+            // North region is the key component for this system: it has canals connecting water to both South and East.
+            // Need to make sure North has enough water to distribute.
+            // Canals are flowing in ONE DIRECTION.
+            // First priority is the North region.
 
-		double totalFlow = 0.0;
-		for (Canal* c : canals) {
-		if ( c != nullptr) {
-		totalFlow += c->getCurrentFlowRate();
-		}
-		}
-		return totalFlow;
-		}
-		std::vector<std::string> findDroughtAreas(const std::vector<Region*>& region) {
-		std::vector<std::string> drought_areas;
-		for (Region* r : regions) {
-			if (r != nullptr && r->isInDrought) {
-			drought_areas.push_back(r->name);
-			}
-		
-		}
-		return drought_areas;
-		}
+            //------NORTH-------
+            if(NorthGain > 0.0 || !North->isInDrought)
+            {
+                  //If South has a deficit, North sends water if it has gain through canal A
+                  if(SouthDeficit > 0)
+                  {
+                        canalA->setFlowRate(DetermineFlowRate(SouthDeficit, NorthGain));
+                        //Stop once North reaches water level
+                        if(SouthDeficit <= 0 && SouthCurrent > SouthNeed)
+                        {
+                              canalA->toggleOpen(false);
+                        }
+                  }
 
-void solveProblems(AcequiaManager& manager)
-{
-	auto canals = manager.getCanals();
-	auto regions = manager.getRegions();
+                  //If East has a deficit, North sends water if it has gain through canal C
+                  if(EastDeficit > 0)
+                  {
+                        canalC->setFlowRate(DetermineFlowRate(EastDeficit, NorthGain));
+                        //Stop once North reaches water level (with tolerance for floating-point)
+                        // if(NorthCurrent == NorthNeed)
+                        // {
+                        //    canalA->toggleOpen(false);
+                        // }
+                  }
 
-	std::vector<std::string> droughtAreas = findDroughtAreas(regions);
+            }
 
-	for(const std::string& are : droughtAreas) {
-		std::cout << "Attempting to release water to drought area; " << area << std::endl;
-		release(canals, area);
-	}
+            //-------EAST-------
+            if(EastGain > 0.0 || !East->isInDrought){
 
+                  //if North has deficit, East sends water if it has gain through canal D
+                  if(NorthDeficit > 0)
+                  {
+                        canalD -> setFlowRate(DetermineFlowRate(NorthDeficit, EastGain));
+                        //stop once east reaches 0 deficit
+                  }
+            }
 
-	while(!manager.isSolved && manager.hour!=manager.SimulationMax)
-	{
-		
-		if(manager.hour == 0)
-		{
-			for(int i = 0; i < canals.size(); i++)
-			{
-				canals[i]->toggleOpen(true);
-				canals[i]->setFlowRate(1);
-				std::cout << "Hour 0: opening canal " << canals[i]->getName() << std::endl;
-			}
-		}
-		} else {
-			std::vector<std::string> region_in_drought = identifyDroughtRegions(regions);
+            //-----SOUTH-------
+            if(SouthGain > 0.0 || !South->isInDrought)
+            {
+                  //if East as deficit, South can send water if it has gain through  canal B
+                  if(EastDeficit > 0)
+                  {
+                        canalB -> setFlowRate(DetermineFlowRate(EastDeficit,SouthGain));
+                        //stop once South reaches water level
+                        if(EastDeficit <= 0 && EastCurrent > EastNeed)
+                        {
+                              canalB->toggleOpen(false);
+                        }
+                  }
+            }
 
-		for(int i = 0; i < regions.size(); i++)
-		{
+            // Update for next hour of simulation
+            manager.nexthour();
+      }
 
-			if(regions[i]->isFlooded == true)
-			{
-				
-				release(canals, regions[i]->name);
-				std::cout << "Hour " << manager.hour << ": Closing canal for flooded region " << region->name << std::endl;
-			}
-			
-			else if(regions[i]->isInDrought = true)
-			{
-			
-				close(canals, regions[i]->name);
-			}
+      for(auto canal : canals)
+      {
+            canal->toggleOpen(false);
+      }
 
-			else if(regions[i]->isFlooded == true && regions[i]->isInDrought == true)
-			{
-				close(canals, regions[i]->name);
-			}
-		}
-		
-		manager.nexthour();
-	}
 }

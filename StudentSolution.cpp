@@ -117,9 +117,6 @@ double CalculateFlowRate(Region* source, Region* destination)
 	// Calculate how much water destination needs (acre-feet)
     double difference = destination->waterNeed - destination->waterLevel;
     
-    // Estimate how much we can transfer in this hour at max capacity. There are 32585 US Gallons per acre-foot
-    double max_transfer_acre_feet = (100 * 3600) / 325851.0;
-    
     // Flow should be proportional to deficit severity
     // If deficit is 50 acre-feet and we can transfer 3.6 acre-feet/hour max:
     // ratio = 50 / 50 = 1.0 → use full capacity
@@ -129,7 +126,7 @@ double CalculateFlowRate(Region* source, Region* destination)
     // Convert to flowRate (0.0 to 1.0 scale)
     double flowRate = (flow_gal_per_sec * 3600) / 325851.0;
     
-    // Cap at maximum
+    // Cap at maximum flow rate.
     if(flowRate > 1.0) flowRate = 1.0;
     
     return flowRate;
@@ -146,67 +143,63 @@ void solveProblems(AcequiaManager& manager)
 	auto NorthNeed = regions[0]->waterNeed;
 
 	auto South = regions[1];
-	auto SouthCurrent = regions[0]->waterLevel;
+	auto SouthCurrent = regions[1]->waterLevel;
 	auto SouthNeed = regions[1]->waterNeed;
 
 	auto East = regions[2];
-	auto EastCurrent = regions[0]->waterLevel;
+	auto EastCurrent = regions[2]->waterLevel;
 	auto EastNeed = regions[2]->waterNeed;
 
 	while(!manager.isSolved && manager.hour != manager.SimulationMax)
 	{
 		//North region is the key component for this system: it has canals connecting water to both South and East.
 		//Need to make sure North has enough water to distribute. 
-	
-		//Next, we can start transferring water to both South and East depending on North's healthy amount of water. 
-		if(NorthCurrent > NorthNeed) 
-		{
-			//North to South => logic for canal A
-			if(NorthCurrent > NorthNeed && NorthCurrent < North->waterCapacity)
-			{
-				if(SouthCurrent < SouthNeed)
-				{
-					auto rate = CalculateFlowRate(North, South);
-					canal[0]->setFlowRate(rate);
-					canal[0]->toggleOpen(true);
-				}
-
-				//North to East => logic for canal C
-				if(EastCurrent < EastNeed)
-				{
-					auto rate = CalculateFlowRate(North, East);
-					canal[3]->setFlowRate(rate);
-					canal[3]->toggleOpen(true);
-
-				}
-			}else if(NorthCurrent == NorthNeed)
-			{
-			//Once North reaches its water needed, stop canal A and C 
-			canal[3]->toggleOpen(false);
-			canal[0]->toggleOpen(false);
-			}
-		}
-		
-			
-		//East to North => logic for canal D. The only canal that can move water to North. 
+		//East to North => logic for canal D. The only canal that can move water to North.
 		if(NorthCurrent < NorthNeed && EastCurrent > EastNeed)
 		{
 			auto rate = CalculateFlowRate(East, North);
 			canal[3]->setFlowRate(rate);
 			canal[3]->toggleOpen(true);
 
-		}else if(EastCurrent == EastNeed) 
+		}else if(EastCurrent >= EastNeed) 
 		{
 			canal[3]->toggleOpen(false);//close canal once East reaches its water need
 		}
 
+		//Next, we can start transferring water to both South and East depending on North's healthy amount of water. 
+		if(NorthCurrent > NorthNeed &&  NorthCurrent < North->waterCapacity) 
+		{
+			//North to South => logic for canal A
+			if(SouthCurrent < SouthNeed)
+			{
+				auto rate = CalculateFlowRate(North, South);
+				canal[0]->setFlowRate(rate);
+				canal[0]->toggleOpen(true);
+			}
+
+			//North to East => logic for canal C
+			if(EastCurrent < EastNeed)
+			{
+				auto rate = CalculateFlowRate(North, East);
+				canal[3]->setFlowRate(rate);
+				canal[3]->toggleOpen(true);
+
+			}
+		}else if(NorthCurrent == NorthNeed)
+		{
+			//Once North reaches its water needed, stop canal A and C 
+			canal[3]->toggleOpen(false);
+			canal[0]->toggleOpen(false);
+		}
+				
+
 		//South to East => logic for canal B 
-		if(EastCurrent < EastNeed && SouthCurrent < SouthNeed)
+		if(EastCurrent > EastNeed && SouthCurrent < SouthNeed)
 		{
 			auto rate = CalculateFlowRate(South, East);
 			canal[1]->setFlowRate(rate);
 			canal[1]->toggleOpen(true);
-		} else if(SouthCurrent == SouthNeed)
+		} else if(SouthCurrent == SouthNeed )
 		{
 			canal[1]->toggleOpen(false);
 		}

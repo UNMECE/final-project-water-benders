@@ -1,6 +1,8 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/nyu3LSzZ)
 # Project3
 
+Video Presentation Link: https://youtu.be/yI81stVRZMs 
+
 Acequia Manager Guide
 
 This is a guideline for the Acequia Water Resource Simulator and the existing structures and functions that allow the simulation to carry forward and the student learning objectives and contributions to the simulator. 
